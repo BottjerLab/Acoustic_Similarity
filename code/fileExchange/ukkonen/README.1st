@@ -1,0 +1,167 @@
+===========================================================================
+
+ This code is a collection of several procedures to create a suffix tree
+ from a string or a generalized suffix tree from multiple strings, as well 
+ as plotting the resulting tree. Due to ongoing work the code will be 
+ extended and updated in future, with or without additional notice.
+
+    Copyright (C) 2010, Eugen Berlin
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+
+
+ Please, refer to the demo.m file where you can try things out. The 
+ following lines provide a quick overview of available functionalities:
+
+
+Creating a suffix tree:
+~~~~~~~~~~~~~~~~~~~~~~~
+ 
+ First, we define a string, e.g.:
+ 
+ >> txt = 'mississippi';
+ 
+ To construct the suffix tree for the string given above we need to call
+ the 'create_suffix_tree' method, providing the string as argument:
+ 
+ >> [root] = create_suffix_tree(txt);
+ 
+ 
+
+Plotting the suffix tree:
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ Now, we can plot the resulting suffix tree for visual inspection. Here,
+ we use the 'showST' function:
+ 
+ >> showST(root, txt, 0);
+ -------------
+  mississippi
+ -------------
+   |--(1:mississippi)
+   |--(2:i)
+       |--(3:ssi)
+           |--(6:ssippi)
+           |--(9:ppi)
+       |--(9:ppi)
+   |--(3:s)
+       |--(4:si)
+           |--(6:ssippi)
+           |--(9:ppi)
+       |--(5:i)
+           |--(6:ssippi)
+           |--(9:ppi)
+   |--(9:p)
+       |--(10:pi)
+       |--(11:i)
+ 
+ 
+ 
+Creating a generalized suffix tree:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+ To construct the generalized suffix tree for one or multiple strings, 
+ we need to run the 'create_generalized_suffix_tree' function, e.g.:
+
+ >> [root,string] = create_generalized_suffix_tree('mississippi');
+ >> [root,string] = create_generalized_suffix_tree('abab','baba','abba');
+ 
+ The resulting string will be a concatenation of the input strings, that 
+ are separated/terminated with a unique terminator character. We can now
+ also plot the suffix tree, similar to the example above:
+ 
+ >> showST(root, string, 0);
+ --------------
+  mississippi! 
+ --------------
+   |--(1:mississippi!) [1]
+   |--(2:i) 
+       |--(3:ssi) 
+           |--(6:ssippi!) [2]
+           |--(9:ppi!) [5]
+       |--(9:ppi!) [8]
+       |--(12:!) [11]
+   |--(3:s) 
+       |--(4:si) 
+           |--(6:ssippi!) [3]
+           |--(9:ppi!) [6]
+       |--(5:i) 
+           |--(6:ssippi!) [4]
+           |--(9:ppi!) [7]
+   |--(9:p) 
+       |--(10:pi!) [9]
+       |--(11:i!) [10]
+   |--(12:!) [12]
+ 
+Plotting the generalized suffix tree:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ We plot the generalized suffix tree with the same showST method mentioned
+ above. Hereby, we use the "string" variable that was returned along with 
+ the root node:
+
+ >> showST(root, string, 0);
+ -----------------
+  abab!baba§abba$ 
+ -----------------
+   |--(1:a) 
+       |--(2:b) 
+           |--(3:a) 
+               |--(4:b!) [1]
+               |--(10:§) [7]
+           |--(5:!) [3]
+           |--(13:ba$) [11]
+       |--(10:§) [9]
+       |--(15:$) [14]
+   |--(2:b) 
+       |--(3:a) 
+           |--(4:b) 
+               |--(5:!) [2]
+               |--(9:a§) [6]
+           |--(10:§) [8]
+           |--(15:$) [13]
+       |--(5:!) [4]
+       |--(13:ba$) [12]
+   |--(5:!) [5]
+   |--(10:§) [10]
+   |--(15:$) [15]
+  
+  
+ 
+Pattern occurences in the suffix tree:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ If you are interested in querying the original string with patterns,
+ you can use the following method to search the tree:
+ 
+ Create a generalized(!) suffix tree for the original string, e.g.:
+ 
+ >> txt = 'mississippi';
+ >> [root,string] = create_generalized_suffix_tree( txt );
+ 
+ Then, we can query the suffix tree, e.g.:
+ 
+ >> query = 'issi';
+ >> occ_ind = searchST(root,string,query);
+ >> occ_ind
+ 
+ The occurrence indices will be stored in the array occ_ind. The length 
+ of the array tells you the number of occurrences. In our example, the 
+ number of occurences is 2, and the corresponding indice array is: [2  5]
+ 
+ 
+ 
+#EOF 

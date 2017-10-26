@@ -1,0 +1,98 @@
+function evCommon = findIntersection(evs1, evs2)
+% precondition: evs1 and evs2 have no internal overlap of their own
+
+    evs1 = basicEvents(evs1); evs2 = basicEvents(evs2);
+    N1 = numel(evs1);
+    N2 = numel(evs2);
+    evCommon = initEvents(0);
+    %evUnique1 = initEvents(0);
+    %evUnique2 = initEvents(0);
+    
+    interMatrix = false(N1,N2);
+    for ii = 1:N1
+        for jj = 1:N2
+            interMatrix(ii,jj) = ...
+                ~(evs1(ii).stop < evs2(jj).start || ...
+                evs2(jj).stop < evs1(ii).start);
+        end
+    end
+    for ii = 1:N1
+        if ~any(interMatrix(ii,:)), continue; end;
+        
+        A = evs1(ii);
+        % get all events in evs2 that overlap with A, sorted by start
+        subB = sortBy(findUnion(evs2(interMatrix(ii,:))),'start');
+        for jj = 1:numel(subB)
+            % in this loop, A becomes what is left of A after considering
+            % the union/intersection
+            
+            [tSubs,comm] = ANotInB(A, subB(jj)); % tSubs is only one or two events
+            if ~isempty(comm), evCommon = [evCommon comm]; end
+            
+            if isempty(tSubs), break;
+
+            elseif numel(tSubs) == 2
+                %evUnique1 = [evUnique1 tSubs(1)];
+                A = tSubs(2);
+            else
+                if tSubs.stop > A.stop,
+                    %evUnique2 = [evUnique2 tSubs];
+                    break;
+                else
+                    A = tSubs;
+                end
+            end
+        end
+    end
+    
+    for jj = 1:N2
+        if any(interMatrix(:,jj))
+            subB = sortBy(findUnion(evs1(interMatrix(:,jj))),'start');
+            A = evs2(jj);
+            for ii = 1:numel(subB)
+                [tSubs, comm] = ANotInB(A, subB(ii));
+                evCommon = [evCommon comm];
+                if isempty(tSubs), break; 
+                elseif numel(tSubs) == 2 
+                    %evUnique2 = [evUnique2 tSubs(1)];
+                    A = tSubs(2);
+                else
+                    if B.stop > A.stop, 
+                        %evUnique2 = [evUnique2 tSubs];
+                        break;
+                    else
+                        A = tSubs;
+                    end
+                end
+            end
+        %else
+            %evUnique2 = [evUnique1 evs1(ii)];
+        end
+    end
+end
+
+function [ev, comm] = ANotInB(A,B) % assumes A and B are single events
+
+% ev is A Not In B
+% comm is A In B
+ev = initEvents(0);
+comm = initEvents(0);
+if isempty(B) || isWithinEvent(A,B) % B A A B 
+    comm = A;
+    return; 
+elseif isWithinEvent(B,A) % A B B A
+    ev = initEvents(2);
+    ev(1) = A; ev(1).stop = B.start; ev(1).idxStop = B.idxStart;
+    ev(2) = A; ev(2).start = B.stop; ev(2).idxStop = B.idxStop;
+    comm = B;
+elseif B.stop > A.stop && B.start < A.stop && B.start > A.start % A B A B
+    ev = A; ev.stop = B.start; ev.idxStop = B.idxStart;
+    comm = B; ev.stop = A.stop; ev.idxStop = A.idxStop;
+elseif B.start < A.start && B.stop < A.stop && B.stop > A.start % B A B A 
+    ev = A; ev.start = B.stop; ev.idxStart = B.idxStop;
+    comm = B; ev.start = A.start; ev.idxStart = A.idxStart;
+else % A A B B or B B A A
+    return;
+end
+
+end
