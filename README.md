@@ -1,12 +1,12 @@
 # Acoustic Similarity
 
-* Brief (one paragraph) project description goes here - TBD
+Brief (one paragraph) project description goes here - TBD
 
-### Prerequisites
+## Prerequisites
 
 1. MATLAB R2013a or higher.
 
-### Installation
+## Installation
 
 1. Download the package by cloning this repository.
 2. Open MATLAB, navigate to the download location, and add the root folder of the repository + all subfolders to the MATLAB path.
@@ -22,7 +22,7 @@ You can segment syllables, perform clustering on syllables, or calculate tutor s
 
 ## Authors
 
-* Can fill out this section with John's/Jenny's info
+Can fill out this section with John's/Jenny's info
 
 ## License
 
