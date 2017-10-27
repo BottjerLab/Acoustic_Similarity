@@ -17,7 +17,7 @@ You can segment syllables, perform clustering on syllables, or calculate tutor s
 
 1. Open MATLAB, and run segmentAndCluster.m, located in Acoustic_Similarity/workflow.
 2. When prompted, select the example data file - Acoustic_Similarity/data/Gy242/Gy242_08_31_039.mat
-3. As the script runs, check its progress and follow the onscreen prompts as they appear. <br>Important:<br> Variables that the script prompts you to save must be saved in the same directory as the original data file (e.g. Acoustic_Similarity/data/Gy242).
+3. As the script runs, check its progress and follow the onscreen prompts as they appear. **Important:** Variables that the script prompts you to save must be saved in the same directory as the original data file (e.g. Acoustic_Similarity/data/Gy242).
 4. (Instructions to run compareTutorJuvenile.m will go here. Need to check with John first to ensure all the inputs to the script have been generated.)
 
 ## Authors
