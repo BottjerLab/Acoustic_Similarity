@@ -1,6 +1,6 @@
 # Acoustic Similarity
 
-Brief (one paragraph) project description goes here - TBD
+We created custom software in MATLAB using many features created for Sound Analysis Pro (Tchernichovski, O. 2000 Anim Behav. 59:1167-1176) in order to (a) assign renditions of immature vocal utterances in juvenile songbirds to different syllable types, and (b) measure the acoustic similarity of these immature syllable renditions to mature syllables learned from an adult tutor.  To assign syllable renditions to different types, we employed a combination of two measures of the acoustic distance between syllables that was then used to cluster syllables.  The first distance measure was based on summary statistics of 10 different acoustic features; the second distance measure was based on time-varying changes in 5 of those features. Similarity to tutor was calculated as the acoustic distance between each syllable rendition and its closest tutor syllable.  An alternate way of defining tutor similarity is as the distance between the center of the syllable cluster to which each rendition belonged and the closest tutor syllable (this is commented out in the code); for our data these two methods yielded highly similar results.
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ You can segment syllables, perform clustering on syllables, or calculate tutor s
 
 ## Authors
 
-Can fill out this section with John's/Jenny's info
+Can fill out this section with John's info
 
 ## License
 
