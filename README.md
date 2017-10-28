@@ -27,7 +27,7 @@ Can fill out this section with John's/Jenny's info
 
 ## License
 
-This project is licensed under the GNU GPLv3 License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the GNU GPLv3 License - see the [LICENSE.md](LICENSE) file for details
 
 ## Acknowledgments
 
