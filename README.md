@@ -33,7 +33,7 @@ You can segment syllables, perform clustering on syllables, or calculate tutor s
 
 ## Authors
 
-Written by [mailto:johndashen@gmail.com](John Shen).  (c) 2013-2015.  
+Written by [John Shen](mailto:johndashen@gmail.com).  (c) 2013-2015.  
 
 ## License
 
