@@ -33,7 +33,7 @@ You can segment syllables, perform clustering on syllables, or calculate tutor s
 
 ## Authors
 
-Can fill out this section with John's info
+Written by [mailto:johndashen@gmail.com](John Shen).  (c) 2013-2015.  
 
 ## License
 
@@ -41,7 +41,7 @@ This project is licensed under the GNU GPLv3 License - see the [LICENSE.md](LICE
 
 ## Acknowledgments
 
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
-
+Thanks to:
+* coauthors Sarah Bottjer and Jennifer Achiro for statistical, scientific and technical guidance.
+* Arthur Shau for curating, revising and documentation.
+* the members of USC's iLab for Matlab training and support.
