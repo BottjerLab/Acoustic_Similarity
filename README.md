@@ -29,8 +29,8 @@ You can segment syllables, perform clustering on syllables, or calculate tutor s
 2. When prompted, select the example data file - Acoustic_Similarity/data/Gy242/Gy242_08_31_039.mat
 3. As the script runs, check its progress and follow the onscreen prompts as they appear.  
 **Important:** Mat files that the script prompts you to save must be saved in the same directory as the original data file (e.g. Acoustic_Similarity/data/Gy242).
-4. After segmentAndCluster finishes, run prepareDRsylls.m, which takes in a birdID like so: prepareDRsylls('Gy242');
-5. Then, run fullClusterByDayGy242.m
+4. After segmentAndCluster finishes, run prepareDRsylls.m, which takes in a birdID to generate the allSpecs-Gy242.mat file like so: prepareDRsylls('Gy242');
+5. Then, run fullClusterByDayGy242.m and browseAndAccept.m. 
 6. Finally, run compareTutorJuvenile.m. There will need to be a mat file containing tutor syllables in the same directory as the data files named tutor-[birdID].mat (e.g. tutor-Gy242.mat).
 
 After running these steps, you should have a variety of mat files containing syllable, clustering, and tutor similarity information saved in the directory.
