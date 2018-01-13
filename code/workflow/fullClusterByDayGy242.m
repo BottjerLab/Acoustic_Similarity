@@ -10,13 +10,13 @@ cachedResFile = ['data' filesep birdID filesep 'allSpecs-' birdID '.mat'];
 necessaryVars = {'DRsylls', 'featureTable' 'spectra'};
 containedVars = who('-file',cachedResFile);
 hasValue = false(1,numel(necessaryVars));
-for ii = 1:numel(necessaryVars),
+for ii = 1:numel(necessaryVars)
     hasValue(ii) = any(strcmp(necessaryVars{ii}, containedVars));
 end
 if ~hasValue(1)
     error('DRsylls not found...');
 end
-if ~all(hasValue(2:3)),
+if ~all(hasValue(2:3))
     warning('Spectra Values not cached...');
 end
 fprintf('Loading cached data from %s...\n', cachedResFile);
@@ -24,8 +24,8 @@ load(cachedResFile, necessaryVars{:})
 %%
 ages = unique([DRsylls.age]);
 
-startAge = 2; % generate  age 54, 58, 59 cluster files
-for ii = startAge:numel(ages)
+startAge = 1; % generate  age 54, 58, 59 cluster files (skipping 53, for some reason)
+for ii = startAge:numel(ages) %for each age .. 
     % limit for test purposes/brevity
     thisAge = ages(ii);
     isThisAge = ([DRsylls.age]==thisAge);
@@ -34,18 +34,21 @@ for ii = startAge:numel(ages)
     timeFlag = datestr(clock, 'mm_dd_HH_MM');
     
     diary([clustFolder 'diary-' timeFlag '-age' num2str(thisAge) '.txt']);
-    nTrain = sum(isThisAge);
-    seld = find(isThisAge);
+    nTrain = sum(isThisAge); %# of syllables from a particular age (isThisAge)
+    seld = find(isThisAge); %row of indices of DRsylls rows that correspond to syllables from a particular age (isThisAge)
 
-    % get out the features
+    % get out the features [but spectra already contains feature calcs ..
+    % just adding mfcc?]
     fineP = params.fine; fineP.features = {'mfcc'};
     for jj = 1:nTrain
         [cl, fineP.fs] = getClip(DRsylls(seld(jj)));
-        spectra(jj) = getMTSpectrumStats(cl,fineP);
+        %spectra(jj) = getMTSpectrumStats(cl,fineP); %orig; RY changed to add mfcc, to correct corresponding syllable rows
+        addmfcc = getMTSpectrumStats(cl, fineP); %getMTSpectrumStats produces structure 
+        spectra(seld(jj)).mfcc = addmfcc.mfcc; %add just mfcc info to corresponding syllable row
     end
     
     t1 = clock;
-    [clusterIdxs, empMats, distMats, empDistrs] = DRcluster(DRsylls(seld), featureTable(seld), spectra(seld), params);
+    [clusterIdxs, empMats, distMats, empDistrs] = DRcluster(DRsylls(seld), featureTable(seld), spectra(seld), params); %cluster syllables from this age into types
     fprintf('Time for total clustering: %0.2fs\n',etime(clock, t1));
     
     clusterFile = [clustFolder 'altClustDataAge-' num2str(ages(ii)) '-' timeFlag];
@@ -55,8 +58,8 @@ for ii = startAge:numel(ages)
     save([clusterFile '.mat'], 'clusterIdxs', 'empMats', 'distMats', 'empDistrs', 'seld');
     
 %%    
-    typedDRsylls = DRsylls(seld);
-    takenIdxs = clusterIdxs(:,end);
+    typedDRsylls = DRsylls(seld); %syllables from a particular age (isThisAge)
+    takenIdxs = clusterIdxs(:,end); %
     nTypes = max(takenIdxs);
     
     for jj = 1:nTypes

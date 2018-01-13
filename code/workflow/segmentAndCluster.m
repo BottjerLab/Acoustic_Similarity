@@ -107,22 +107,22 @@ clear tmpSyllables
 approvedSyllables = manualSyllables;
 uisave({'approvedSyllables'}, [matpath filesep prependForSave('approvedSyllables-',matFile)]);
 
-%% (2.7 optional) unsupervised labeling via 'agglomerative clustering'
-% get distances between juvenile syllables 
-ROIs = syllables;
-profile on;
-[boutDistMatrixMean, boutDistMatrix] = syllableAllCross(songStruct, ROIs);
-profile viewer
-profile off;
-uisave({'boutDistMatrixMean','boutDistMatrix'},prependForSave('corrMT-', matFile));
-
-% construct labels for letters according to clusters
-nClusters = 5;
-disp('Hierarchical clustering and alphabet creation...');
-[stringRep, clusterIdxs] = createAlphabet(ROIs, boutDistMatrix, songStruct, ...
-    [],'fs',fs, 'playsample', true, 'nClusters', nClusters,'clusterMethod', 'ward', 'plot',true);
-
-clusteredROIs = ROIs;
-strCelled = cellstr(stringRep');
-[clusteredROIs.type] = strCelled{:};
-[ROIs.clusterType] = strCelled{:};
+% %% (2.7 optional) unsupervised labeling via 'agglomerative clustering'
+% % get distances between juvenile syllables 
+% ROIs = syllables;
+% profile on;
+% [boutDistMatrixMean, boutDistMatrix] = syllableAllCross(songStruct, ROIs);
+% profile viewer
+% profile off;
+% uisave({'boutDistMatrixMean','boutDistMatrix'},prependForSave('corrMT-', matFile));
+% 
+% % construct labels for letters according to clusters
+% nClusters = 5;
+% disp('Hierarchical clustering and alphabet creation...');
+% [stringRep, clusterIdxs] = createAlphabet(ROIs, boutDistMatrix, songStruct, ...
+%     [],'fs',fs, 'playsample', true, 'nClusters', nClusters,'clusterMethod', 'ward', 'plot',true);
+% 
+% clusteredROIs = ROIs;
+% strCelled = cellstr(stringRep');
+% [clusteredROIs.type] = strCelled{:};
+% [ROIs.clusterType] = strCelled{:};
