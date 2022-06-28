@@ -1,4 +1,4 @@
-function [clustIdxs, empMatrices, distMatrices, empDistrs] = DRcluster(DRsylls, featureTable, spectra, params, varargin)
+function [clustIdxs, empMatrices, distMatrices, empDistrs] = DRcluster(songStruct,DRsylls,noiseMask,featureTable, spectra, params, varargin)
 
 timeFlag = ['T-' datestr(clock, 'mm_dd_HH_MM')];
    
@@ -14,13 +14,8 @@ isTooShort = (params.fine.windowSize / 1000 > [DRsylls.stop] - [DRsylls.start]);
 DRsylls(isTooShort) = [];
 fprintf('Removing %d syllables that are too short...\n', sum(isTooShort));
 
-% sort
-[DRsylls, sortedIdx] = sortBy(DRsylls, 'file');
-
 N = numel(DRsylls);% = min(ceil(numel(allDRsylls)/2),1000);
 NC2 = nchoosek(N,2);
-
-if any(sortedIdx ~= 1:N) fprintf('NB: Check sorting...\n'); end
 
 nEmpD = min(NC2,2e4);
 
@@ -39,10 +34,7 @@ fieldsToKeep = {'AM','FM','pitchGoodness','wienerEntropy','fundamentalFreq','tim
 params.fine.features = {'wienerEntropy','deriv','harmonicPitch','fundamentalFreq'};
 
 % get sampling rate
-[filePath, fileStem] = fileparts(DRsylls(1).file);
-metaFile = [filePath filesep 'meta-' fileStem];
-metaStruct = []; load(metaFile);
-params.fine.fs = 1/metaStruct.interval;
+params.fine.fs = 1/songStruct.interval;
 
 % calculate spectra
 if ~specsCached
@@ -53,16 +45,6 @@ if ~specsCached
     
     progressbar(sprintf('Calculating spectra & features for regions (# = %d)',N));
     for ii = 1:N
-        %get noisemask
-        if ii==1 || ~strcmp(DRsylls(ii-1).file, DRsylls(ii).file)
-            [filePath fileStem] = fileparts(DRsylls(ii).file);
-            nMFile = [filePath filesep 'noiseMask-' fileStem '.mat'];
-            if exist(nMFile, 'file') 
-                fprintf('Loading noise mask from %s...\n',nMFile);
-                noiseMask = []; load(nMFile); 
-            end
-        end
-        
         cl = getClipAndProcess([],DRsylls(ii), params, 'noroll','doFilterNoise',true,'noiseFilter', noiseMask);
         tmpSpec = getMTSpectrumStats(cl, params.fine);
         for jj = 1:numel(fieldsToKeep)
@@ -117,7 +99,7 @@ for ii = 1:N-1
         
     end
 end
-save(['tmpDists-' timeFlag],'DRsylls','distMatrices');
+% save(['tmpDists-' timeFlag],'DRsylls','distMatrices');
             
 progressbar(1);
 tt=toc;
@@ -134,7 +116,7 @@ fprintf('Time warping took %0.2f s...\n', tt);
 fprintf('Calculating global dissimilarity scores...\n');
 zNormedFeatures = zscore(featureTable);
 distMatrices.global = pdist(zNormedFeatures);
-save(['tmpDists-' timeFlag],'DRsylls','distMatrices');
+% save(['tmpDists-' timeFlag],'DRsylls','distMatrices');
 
 %% get non-parametric (probability-rank) ordering of similarity scores
 fprintf('Calculating empirical scores...\n');
@@ -160,7 +142,7 @@ for ii = 1:numel(scoreTypes)
     empDistrs.(fld) = zeros(2,numel(xx));
     empDistrs.(fld)(1,:) = xx;
     empDistrs.(fld)(2,:) = yy;
-    save(['tmpEmp-'  timeFlag],'DRsylls','empMatrices', 'empDistrs');
+%     save(['tmpEmp-'  timeFlag],'DRsylls','empMatrices', 'empDistrs');
 end
 %% construct co-similarity as fusion of local and global p-values
 fprintf('Calculating co-dissimilarity (correlation of dissimilarities, which is a similarity score)...\n');
@@ -173,17 +155,18 @@ pairLinks = linkage(distMatrices.cosim,'complete');
 clustIdxs = cluster(pairLinks,'maxclust',nClusters);
 
 % undo sorting step
-clustIdxs(sortedIdx,:) = clustIdxs;
 scoreTypes = fieldnames(distMatrices);
 for ii = 1:numel(scoreTypes)
-    distMatrices.(scoreTypes{ii}) = squareform(unsort2D(squareform(distMatrices.(scoreTypes{ii})), sortedIdx));
+    distMatrices.(scoreTypes{ii}) = squareform(unsort2D(squareform(distMatrices.(scoreTypes{ii})), ...
+        ones(1,length(squareform(distMatrices.(scoreTypes{ii}))))));
     if isfield(empMatrices, scoreTypes{ii})
-         empMatrices.(scoreTypes{ii}) = squareform(unsort2D(squareform( empMatrices.(scoreTypes{ii})), sortedIdx));
+         empMatrices.(scoreTypes{ii}) = squareform(unsort2D(squareform(empMatrices.(scoreTypes{ii})), ...
+             ones(1,length(squareform(distMatrices.(scoreTypes{ii}))))));
     end
-end
 end
 
 function mat = unsort2D(mat, sI)    
     [coordsi, coordsj] = meshgrid(sI,sI);
     mat(sub2ind(size(mat),coordsi, coordsj)) = mat;
+end
 end

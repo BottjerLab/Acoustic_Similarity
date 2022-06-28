@@ -1,32 +1,32 @@
+function [noiseMask,manualMotifs,syllables] = segmentAndCluster(songStruct,motifData)
+% Function to identifty individual syllables from a singing channel 
+% exported from Spike2 in the form of a struct.
+% This struct (denoted with the precursor approvedSyllables) includes info
+% on the following:
+% - The start/stop time of a syllable in seconds
+% - The start/stop index of a syllable in the raw voltage data
+%
+% Also saves/returns a struct representing the noise mask (denoted with the 
+% precursor noiseMask).
+%
+% Assumes the Spike2-exported file contains your motif onsets/offsets (as 
+% a level channel; with 'motif' somewhere in the title) and the song 
+% channel.
+%
+% Edited by EL 2021
+
+%% CONSTANTS: Change if desired
+% FOLDER_NAME = 'syllable files'; % name of folder to save all files in
 
 %% prep step: load song file (the new way, disk readable files)
-% define files to be operated over
-[matFile, matpath] = uigetfile('*.mat','Please choose the song Spike2 file','data');
-% load file
-songStruct = loadSpikeAudioStruct([matpath matFile]);
-%%songStruct.title = matFile;
 fs = 1/songStruct.interval;
-fprintf('Loaded spike audio %s.\n',matFile);
-%% prep step: set parameters from an alias
 params = processArgs(defaultParams,'Gy242');
 params.fs = fs; 
 
-%% (1-eps) load motif onset/offset times from Spike
-birdID = strtok(matFile, '_');
-returnFil = [matpath '\motifReturn-' matFile '.txt'];
-returnFil = strrep(returnFil, '.mat','')
-returnFid = fopen(returnFil);
-
-% pick up header and dead line - first column vector is starts
-fgetl(returnFid); fgetl(returnFid);
-returnStarts = textscan(returnFid,'%f'); returnStarts = returnStarts{1};
-
-% pick up header and dead line - second column vector is stops 
-fgetl(returnFid); fgetl(returnFid);
-returnStops = textscan(returnFid,'%f'); returnStops = returnStops{1};
+%% load motif onset/offset times
+returnStarts = motifData.times(logical(motifData.level));
+returnStops = motifData.times(~logical(motifData.level));
     
-fclose(returnFid);
-
 returnSIndices = [zeros(numel(returnStarts),1); ones(numel(returnStops), 1)];
 [fusedTimes,sIdxs] = sort([returnStarts; returnStops]);
 returnSIndices = returnSIndices(sIdxs);
@@ -60,11 +60,13 @@ end
 noiseMask = noiseAnalysis(songStruct, candidateNoise);
 
 % save noise mask
-uisave('noiseMask',[matpath prependForSave('noiseMask-', matFile)]);
+% if not(isfolder(FOLDER_NAME))
+%     mkdir(FOLDER_NAME)
+% end
+% save([FOLDER_NAME,'\noiseMask-',matFile],'noiseMask');
 
 %% (2) parse juvenile motifs into syllables
-ROIs = manualMotifs;%labeledBouts(strcmp('BOS',{labeledBouts.type}));
-%ROIs = ROIs(randperm(numel(ROIs)));
+ROIs = manualMotifs;
 params = processArgs(defaultParams,'fs',1/songStruct.interval, 'preroll', 30, ...
     'inter.freqBands', linspace(1,10240,params.inter.NfreqBands));
 syllables = ...
@@ -75,7 +77,7 @@ syllables = ...
     'syllable.minLength', 10,...
     'plot', false, 'pause', false);
 
-uisave({'manualMotifs', 'syllables'}, [matpath prependForSave('syllables-',matFile)]);
+% save([FOLDER_NAME,'\syllables-',matFile],'manualMotifs','syllables');
 
 %% (2.5) refine (and LABEL) parse with manual work
 % do a manual refinement
@@ -100,29 +102,29 @@ for ii = 1:numel(ROIs) % if you want to continue, change this range
 end
 
 % moves new results to permanent location
-manualSyllables = tmpSyllables;
+syllables = tmpSyllables;
 clear tmpSyllables
 
 %% (save) do this after you work on (2.5) %%%%
-approvedSyllables = manualSyllables;
-uisave({'approvedSyllables'}, [matpath filesep prependForSave('approvedSyllables-',matFile)]);
-
-% %% (2.7 optional) unsupervised labeling via 'agglomerative clustering'
-% % get distances between juvenile syllables 
-% ROIs = syllables;
-% profile on;
-% [boutDistMatrixMean, boutDistMatrix] = syllableAllCross(songStruct, ROIs);
-% profile viewer
-% profile off;
-% uisave({'boutDistMatrixMean','boutDistMatrix'},prependForSave('corrMT-', matFile));
+% approvedSyllables = manualSyllables;
+% uisave({'approvedSyllables'}, [matpath filesep prependForSave('approvedSyllables-',matFile)]);
 % 
-% % construct labels for letters according to clusters
-% nClusters = 5;
-% disp('Hierarchical clustering and alphabet creation...');
-% [stringRep, clusterIdxs] = createAlphabet(ROIs, boutDistMatrix, songStruct, ...
-%     [],'fs',fs, 'playsample', true, 'nClusters', nClusters,'clusterMethod', 'ward', 'plot',true);
-% 
-% clusteredROIs = ROIs;
-% strCelled = cellstr(stringRep');
-% [clusteredROIs.type] = strCelled{:};
-% [ROIs.clusterType] = strCelled{:};
+% % %% (2.7 optional) unsupervised labeling via 'agglomerative clustering'
+% % % get distances between juvenile syllables 
+% % ROIs = syllables;
+% % profile on;
+% % [boutDistMatrixMean, boutDistMatrix] = syllableAllCross(songStruct, ROIs);
+% % profile viewer
+% % profile off;
+% % uisave({'boutDistMatrixMean','boutDistMatrix'},prependForSave('corrMT-', matFile));
+% % 
+% % % construct labels for letters according to clusters
+% % nClusters = 5;
+% % disp('Hierarchical clustering and alphabet creation...');
+% % [stringRep, clusterIdxs] = createAlphabet(ROIs, boutDistMatrix, songStruct, ...
+% %     [],'fs',fs, 'playsample', true, 'nClusters', nClusters,'clusterMethod', 'ward', 'plot',true);
+% % 
+% % clusteredROIs = ROIs;
+% % strCelled = cellstr(stringRep');
+% % [clusteredROIs.type] = strCelled{:};
+% % [ROIs.clusterType] = strCelled{:};

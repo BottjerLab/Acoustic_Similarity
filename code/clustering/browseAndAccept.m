@@ -1,42 +1,13 @@
-function [acceptedLabels, augmentedLabels] = browseAndAccept(birdID)
+function [clusterIdxs] = browseAndAccept(songStruct,DRsylls,featureTable,syllClusters)
 % interactive part of clustering post-machine step
 % several prompts based on the output results from recalcClusters* family
 %%
-close all;
-clusterDir = [pwd filesep 'data' filesep 'cluster-' birdID filesep];
-dataDir    = [pwd filesep 'data' filesep            birdID filesep];
-
 plotParams = processArgs(defaultParams,...
                             'dgram.minContrast', 1e-11, 'doFilterNoise', false,...
                             'preroll', 3, 'postroll', 3);
-        
-% load the subset of syllables
-fprintf('Loading spectra for bird %s...', birdID);
-DRsylls = []; featureTable = []; spectra = [];
-
-load([dataDir 'allSpecs-' birdID '.mat'], 'DRsylls','featureTable');
-fprintf(' done loading.\n');
-
-% choose the cluster file
-[filName, pathName] = uigetfile([clusterDir '*.mat'],'Select the file to grab clusters from');
-fprintf('Loading cluster file...');
-%%
-% parse the age, subselect the syllables to save memory
-[~,foooo] = strtok(filName,'-');
-thisAge = sscanf(foooo(2:end), '%d'); thisAge = thisAge(1); % make me less hacky.......... use a regexp
-clustSession = strrep(filName(1:end-5), 'altClustDataAge-','');
-%%
-isAge = ([DRsylls.age] == thisAge);
-DRsylls = DRsylls(isAge);
-featureTable = featureTable(isAge);
-
-%% load cluster file
-clusterIdxs = [];
-load([pathName filesep filName], 'clusterIdxs');
-fprintf('Now loading distance matrix for additional refinement... ');
-load([pathName filesep filName], 'distMats');
-fprintf('done loading.\n');
-
+                        
+clusterIdxs = syllClusters.clusterIdxs;
+distMats = syllClusters.distMats;
 %%
 % pick the kind of clustering
 if isstruct(clusterIdxs)
@@ -76,17 +47,17 @@ isFused = false(1,nClusts);
 %%
 grpCtr = 1;
 for ii = 1:nClusts
-    if isFused(sortPerm(ii)), continue; end;
+    if isFused(sortPerm(ii)), continue; end
     %% inspect cluster
     clf    
-    mosaicDRSpec(DRsylls(thisSetIdxs == sortPerm(ii)), plotParams, 'maxMosaicLength', 4.5);
+    mosaicDRSpec(DRsylls(thisSetIdxs == sortPerm(ii)), songStruct, plotParams, 'maxMosaicLength', 4.5);
     set(gcf,'Name',sprintf('Cluster #%d (%d/%d)',sortPerm(ii),ii,nClusts));    
     
     retry = true;
     while retry
         retry = false;
-        switch nm_questdlg('How to treat this cluster?', ...
-                sprintf('Cluster %d, # = %d', sortPerm(ii), sum(thisSetIdxs == sortPerm(ii))),...
+        switch nm_questdlg(sprintf('How to treat this cluster?\n# = %d',sum(thisSetIdxs == sortPerm(ii))), ...
+                sprintf('Cluster %d', sortPerm(ii)),...
                 'Accept', 'Reject', 'Edit', 'Accept')
             case 'Accept'
                 acceptedLabels(thisSetIdxs == sortPerm(ii)) = grpCtr;
@@ -110,26 +81,26 @@ acceptedLabels(acceptedLabels == -1) = NaN;
 
 % save to an acceptedLabels file
 clusterIdxs = struct('accepted', acceptedLabels);
-saveFileName = [pwd filesep 'data' filesep birdID filesep 'acceptedLabels-' birdID '-age' num2str(thisAge) '.mat'];
-fprintf('Saving cluster identifies to %s...', saveFileName)
-save(saveFileName, 'clusterIdxs');
+% saveFileName = [pwd filesep 'data' filesep birdID filesep 'acceptedLabels-' birdID '-age' num2str(thisAge) '.mat'];
+% fprintf('Saving cluster identifies to %s...', saveFileName)
+% save(saveFileName, 'clusterIdxs');
 
 %% step 1.5: encourage review and merging of labels
 % goal: make more representative syllables
-regroupedLabels = mergeClustersByHand(DRsylls, dists, acceptedLabels);
+regroupedLabels = mergeClustersByHand(songStruct, DRsylls, dists, acceptedLabels);
 
 %% second pass: try to match labels to establish groups
 % find matches by looking at the distance
 % loop through the unlabeled syllables
 % look for matches within the range of acceptable distances
-augmentedLabels = semiLabelSyllables(DRsylls, dists, regroupedLabels);
+augmentedLabels = semiLabelSyllables(songStruct,DRsylls, dists, regroupedLabels);
 
 %% save to an acceptedLabels file
 clusterIdxs = struct('accepted', acceptedLabels, 'regrouped', regroupedLabels, 'augmented', augmentedLabels);
-saveFileName = [pwd filesep 'data' filesep birdID filesep 'acceptedLabels-' birdID '-age' num2str(thisAge) '.mat'];
-fprintf('Saving cluster identifies to %s...', saveFileName);
-save(saveFileName, 'clusterIdxs');
-fprintf('done. hooray. \n');
+% saveFileName = [pwd filesep 'data' filesep birdID filesep 'acceptedLabels-' birdID '-age' num2str(thisAge) '.mat'];
+% fprintf('Saving cluster identifies to %s...', saveFileName);
+% save(saveFileName, 'clusterIdxs');
+% fprintf('done. hooray. \n');
 %%
     function [newLabelGrps, tryAgain] = editSub(labels, oldLabel)
         nThisType = sum(labels == oldLabel);
@@ -147,10 +118,9 @@ fprintf('done. hooray. \n');
                 % now presentIden and clustIden should fuse
                 fprintf('Fusing candidate...');
                 
-                figureName = sprintf('%sexpClusters-%s-%s-c%d.jpg', pathName, clustSession, ...
-                    seldClusterType, mergedCluster);
+                figureName = sprintf('%sexpClusters-c%d.jpg', seldClusterType, mergedCluster);
 
-                if exist(figureName,'file') == 2;
+                if exist(figureName,'file') == 2
                     fOp = figure; openFigures = [openFigures fOp];
                     imshow(figureName);
                     set(gcf,'Name',[figureName ' - candidate cluster for merging']);
@@ -206,7 +176,7 @@ fprintf('done. hooray. \n');
                             omitList = splitOpts(omitFeature);
                             
                             % create the join string
-                            for kk = 1:numel(omitList),
+                            for kk = 1:numel(omitList)
                                 omitStr = strcat(omitStr , splitFeatOptions(omitList(kk)));
                                 if kk < nFeats, omitStr = strcat(omitStr,', '); end
                             end
@@ -230,7 +200,7 @@ fprintf('done. hooray. \n');
                                 bins(2:end-1) = linspace(min(stats),max(stats),nBins-2);
                                 bins(end) = 2 * bins(end-1) - bins(end-2);
                                 bins(1) = 2 * bins(2) - bins(3);
-                                bar(bins,histc(stats, bins),1); 
+                                bar(bins,histcounts(stats, bins),1); 
                                 xlim(bins([1 end]));
                                 hold on;
                                 plot(bins, pdf(fitObj,bins'),'r-', 'LineWidth', 2);
@@ -284,7 +254,7 @@ fprintf('done. hooray. \n');
                         figA = figure;
                         openFigures = [openFigures figA];
                         
-                        mosaicDRSpec(DRsylls(typeA), plotParams, 'maxMosaicLength', tPrev);
+                        mosaicDRSpec(DRsylls(typeA), songStruct, plotParams, 'maxMosaicLength', tPrev);
                         set(gcf,'Name',sprintf('Cluster A (# = %d)',numel(typeA)));
 
                         defaultVal = min(totalLenB, tPrev);
@@ -299,7 +269,7 @@ fprintf('done. hooray. \n');
                         figB = figure;
                         openFigures = [openFigures figB];
                         
-                        mosaicDRSpec(DRsylls(typeB), plotParams, 'maxMosaicLength', tPrev);
+                        mosaicDRSpec(DRsylls(typeB), songStruct, plotParams, 'maxMosaicLength', tPrev);
                         set(gcf,'Name',sprintf('Cluster B (# = %d)',numel(typeB)));                        
                     case 'Listen'
                         % simply play the sounds: it's faster to load but
@@ -317,11 +287,11 @@ fprintf('done. hooray. \n');
                     'SelectionMode', 'Single','OKString','Accept',...
                     'CancelString','Retry');
                 
-                if ~isAccept, 
+                if ~isAccept
                     tryAgain = true;
                     closeAll(openFigures);
                     return;
-                end;
+                end
                 respStr = choices{respStr};
                 switch respStr
                     case 'Both'
@@ -336,7 +306,7 @@ fprintf('done. hooray. \n');
                 end
             case 'Sort by Ear'
                 fprintf('Split into no more than 10..., based on audio: \n');
-                newIdxs = multiMark([], DRsylls(labels == oldLabel));
+                newIdxs = multiMark(songStruct, DRsylls(labels == oldLabel));
                 if any(isnan(newIdxs))
                     if strcmp('Start over',questdlg(['Hand labeling is stopped early, accept or start over?'],...
                                 'Labeling stopped', ...

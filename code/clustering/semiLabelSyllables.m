@@ -1,4 +1,4 @@
-function improvedLabels = semiLabelSyllables(syllSet, dists, currLabels)
+function improvedLabels = semiLabelSyllables(songStruct, syllSet, dists, currLabels)
 % currLabels should have some clusters and some NaNs
 if isvector(dists), dists = squareform(dists); end;
 
@@ -162,6 +162,7 @@ end
 % loop through each syllable, but shunt  & make recommendations
 if strcmp(secondPass,'manual')
     figPerm = figure('MenuBar', 'none', 'ToolBar','none');
+    bestMatch = zeros(1,nUn);
 end
 for ii = 1:nUn
     % check the scores
@@ -179,7 +180,7 @@ for ii = 1:nUn
     if strcmp(secondPass, 'manual')
         figure(figPerm);
         subplot('Position',[0 0 1 1]);
-        [cl,fs] = getClipAndProcess([],syllSet(unlabbed(ii)), ...
+        [cl,fs] = getClipAndProcess(songStruct,syllSet(unlabbed(ii)), ...
             defaultParams, 'doFilterNoise', false);
         
         fineSpecParams = getfield(defaultParams,'fine');
@@ -188,7 +189,7 @@ for ii = 1:nUn
         spec = getMTSpectrumStats(cl, fineSpecParams);
         plotDerivGram(spec, defaultParams,'dgram.minContrast', 1e-9);
         set(gca,'YTickLabel',[],'YTick',[]);
-        set(figPerm,'Name',sprintf('Candidate %d/%d for cluster #%d',jj,nUn,ii));
+        set(figPerm,'Name',sprintf('Candidate for cluster #%d',ii));
         str2double(nm_inputdlg(...
             sprintf('Which cluster should we assign this to? (1-%d, NaN for none)',nLabels),...
             sprintf('Approvals, %d/%d',ii,nUn), 1, {num2str(bestMatch(ii))}));
@@ -197,6 +198,6 @@ for ii = 1:nUn
     end
 end
 if strcmp(secondPass,'manual')
-    delete([tmpDir '*.jpg']); deleteStat = rmdir(tmpDir);
+%     delete([tmpDir '*.jpg']); deleteStat = rmdir(tmpDir);
 end
 end

@@ -1,4 +1,4 @@
-function redoneLabels = mergeClustersByHand(syllSet, dists, currLabels)
+function redoneLabels = mergeClustersByHand(songStruct, syllSet, dists, currLabels)
 % currLabels should have some clusters and some NaNs
 plotParams = processArgs(defaultParams,...
                             'dgram.minContrast', 1e-11, 'doFilterNoise', false,...
@@ -23,7 +23,7 @@ mkdir(tmpDir);
 for ii = 1:nLabels
     nEx = min(numel(mostCentral{ii}),5);
     bestFive = syllSet(mostCentral{ii}(1:nEx));
-    mosaicDRSpec(bestFive, plotParams, 'doFilterNoise', true);
+    mosaicDRSpec(bestFive, songStruct, plotParams, 'doFilterNoise', true);
     
     filName = [tmpDir 'clusterEx-' num2str(ii,'%02d') '.jpg'];
     saveCurrFigure(filName);
